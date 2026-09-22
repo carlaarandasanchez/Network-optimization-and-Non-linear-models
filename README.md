@@ -1,83 +1,103 @@
-{\rtf1\ansi\ansicpg1252\deff0\nouicompat{\fonttbl{\f0\fnil\fcharset0 Courier New;}{\f1\fnil\fcharset0 Arial;}}
-{\colortbl ;\red0\green0\blue0;\red0\green0\blue255;}
-{\*\generator Riched20 10.0.19041}\viewkind4\uc1 
-\f0\fs20\lang1033 # Autonomous Drone Delivery Network & Speed Optimization with Pyomo\par
-\par
-This repository contains an end-to-end mathematical modeling and optimization framework for the delivery logistics of **Azure Paradise Resort**. \par
-\par
-The project evaluates two distinct operational challenges: **Part A (Network Optimization - CVRP)** to determine the optimal spatial routing for a drone fleet, and **Part B (Non-Linear Optimization)** to optimize flight speed profiles balancing delivery times and battery power consumption.\par
-\par
----\par
-\par
-## \u55357?\u56515? Problem Overview\par
-\par
-The Azure Paradise Resort covers an area of 10 km\u178?. The resort management replaced ground motorbikes with **5 autonomous drones** to deliver breakfasts from a Central Kitchen (located at coordinate (0,0)) to **20 bungalows** starting at 08:30 AM. The fleet operation adheres to strict constraints:\par
-\par
-*   **Fleet Size:** 5 autonomous drones operating simultaneously.\par
-*   **Payload Capacity:** Maximum of 15 breakfast packages per drone trip.\par
-*   **Autonomy / Battery Range:** Maximum routing distance of 15,000 meters (15 km) per drone.\par
-*   **Demand Limits:** Exactly 1 breakfast required per bungalow (20 total deliveries).\par
-*   **Objective:** Minimize total flight distance (Part A) and balance cruise time versus battery consumption (Part B).\par
-\par
----\par
-\par
-## \u55355?\u56752? Methodological Approach\par
-\par
-### 1. Part A: Network Optimization (Capacitated Vehicle Routing Problem - CVRP)\par
-* **Objective:** Minimize the total distance traveled across all 5 drones while ensuring full delivery coverage, strict capacity bounds, and range constraints.\par
-* **Formulation:** Integer Linear Programming (ILP) using Miller-Tucker-Zemlin (MTZ) constraints for subtour elimination.\par
-* **Mathematical Model:**\par
-  $$\\min \\sum_\{k=1\}\^\{5\} \\sum_\{i=0\}\^\{20\} \\sum_\{j=0\}\^\{20\} d_\{ij\} \\cdot x_\{ijk\}$$
-\par
-  Subject to single-visit constraints, flow conservation, payload capacity (\\le 15 units), battery autonomy (\\le 15,000 m), and MTZ subtour elimination.\par
-* **Key Insight:** Computes optimal, non-overlapping spatial routes that balance delivery loads efficiently without exceeding maximum drone range.\par
-\par
-### 2. Part B: Non-Linear Speed & Energy Optimization\par
-* **Objective:** Optimize cruise speed $v_k$ for each drone along its route to manage aerodynamic power consumption $P(v)$ and total flight duration $t_k$.\par
-* **Aerodynamic Model:** \par
-  $$P(v) = c_1 \\cdot v\^3 + \\frac\{c_2\}\{v\} + c_3$$
-\par
-  Accounting for parasitic drag ($c_1 v\^3$), induced power for lift ($c_2 / v$), and avionics consumption ($c_3$).\par
-* **Multi-Objective Trade-off:** \par
-  $$\\min_\{v_k\} f(v_k) = \\alpha \\cdot t_k + \\beta \\cdot (P(v_k) \\cdot t_k)$$
-\par
-* **Key Insight:** Finds the optimal cruising speed ($v_k$) that delivers breakfasts hot before 08:30 AM while staying safely within the total battery energy capacity ($E_\{max\}$).\par
-\par
---- \par
-\par
-## \u55357?\u56407? Tech Stack & Tools\par
-\par
-* **Language:** Python 3.x\par
-* **Optimization Frameworks:** Pyomo (`pyo.ConcreteModel`) / PuLP\par
-* **Solvers:** CBC / GLPK (Linear & Integer) and Ipopt / SciPy (Non-Linear Optimization)\par
-* **Data Processing & Analytics:** NumPy, SciPy\par
-* **Environment:** Jupyter Notebook\par
-\par
----\par
-\par
-## \u55357?\u56950? How to Run\par
-\par
-1. **Clone the repository:**\par
-   ```bash\par
-   git clone [https://github.com/YOUR_USERNAME/drone-routing-optimization.git](https://github.com/YOUR_USERNAME/drone-routing-optimization.git)\par
-   cd drone-routing-optimization\par
-   ```\par
-\par
-2. **Install dependencies:**\par
-   ```bash\par
-   pip install pyomo pulp scipy numpy matplotlib\par
-   ```\par
-\par
-3. **Install Solvers:**\par
-   * **CBC / GLPK:** `conda install -c conda-forge glpk coin-or-cbc`\par
-   * **Ipopt:** `conda install -c conda-forge ipopt`\par
-\par
-4. **Execute the optimization pipeline:**\par
-   Open `drone_logistics_optimization.ipynb` in Jupyter Notebook or VS Code and run all cells.\par
-\par
----\par
-\par
-## \u55357?\u56433? Authors\par
-* **Carla Aranda** (100523031)\par
-* **Marina Juzgado** (100523023)\par
-}
+# Network Optimization and Non-linear Models for Azure Paradise Resort
+
+This repository contains an end-to-end mathematical modeling and optimization solution for replacing motorbikes with autonomous delivery drones at a luxury resort. 
+
+The project evaluates two distinct operational components: a **Capacitated Vehicle Routing Problem (CVRP)** for optimal route allocation under battery and capacity constraints, and a **Non-linear Energy Model** to optimize drone cruise speed and power consumption.
+
+---
+
+## 📋 Problem Overview
+
+"Azure Paradise Resort" features **20 exclusive bungalows** spread across a 10 km² private island. To eliminate noise, lower maintenance costs, and reduce carbon emissions, the resort is replacing motorbikes with **5 autonomous delivery drones** dispatched from the Central Kitchen $(5000, 5000)$ at 08:30 AM.
+
+* **Global Capacity:** Maximum payload of 15 breakfasts per drone.
+* **Battery Autonomy Limits:** Maximum range of 15 km ($15,000\text{ meters}$) per drone route.
+* **Delivery Logistics:** Synchronized batch dispatch to deliver hot meals simultaneously.
+* **Non-linear Power Dynamics:** Flight power draw increases non-linearly with payload weight and aerodynamic drag at higher speeds.
+
+---
+
+## 🛠️ Methodological Approach
+
+### 1. Model A: Network Optimization (CVRP)
+* **Objective:** Minimize total cumulative travel distance across all operational drone routes while covering all 20 bungalows.
+* **Formulation:** Integer Linear Programming with Miller-Tucker-Zemlin (MTZ) subtour elimination constraints, flow balance, drone capacity, and battery autonomy limits.
+* **Key Insight:** Assigns tight, spatially clustered loops originating and ending at the Central Kitchen, ensuring no drone exceeds its 15 km battery autonomy.
+
+### 2. Model B: Non-linear Energy Optimization
+* **Objective:** Optimize cruise speed ($v_k$) and flight time per drone to minimize total energy consumption (in Watt-hours) under route distance and payload constraints derived from Model A.
+* **Formulation:** Non-linear objective function balancing aerodynamic drag ($\propto v^3$), payload lift power, and baseline electronics draw.
+* **Key Insight:** Optimizes drone velocity to operate at the most efficient speed point, satisfying strict arrival time windows ($T_{\max}$) while avoiding excessive energy depletion.
+
+---
+
+## 📐 Mathematical Models
+
+### Model A Formulation (CVRP)
+
+#### Sets and Indices
+* $V = \{0, 1, 2, \dots, 20\}$: Set of all nodes (0: Central Kitchen, 1–20: Bungalows).
+* $V_c = \{1, 2, \dots, 20\}$: Set of customer bungalows.
+* $K = \{1, 2, 3, 4, 5\}$: Set of available autonomous delivery drones.
+
+#### Objective Function
+$$\min \sum_{k \in K} \sum_{i \in V} \sum_{j \in V, j \neq i} c_{ij} x_{ijk}$$
+
+#### Constraints
+1. **Customer Coverage:** Each bungalow $i \in V_c$ must be visited exactly once by a drone:
+   $$\sum_{k \in K} \sum_{j \in V, j \neq i} x_{ijk} = 1 \quad \forall i \in V_c$$
+
+2. **Flow Balance:** A drone entering node $i$ must also leave node $i$:
+   $$\sum_{j \in V, j \neq i} x_{jik} - \sum_{j \in V, j \neq i} x_{ijk} = 0 \quad \forall i \in V, \forall k \in K$$
+
+3. **Depot Dispatch Limit:** At most $m = 5$ drones can depart from the Central Kitchen ($0$):
+   $$\sum_{k \in K} \sum_{j \in V_c} x_{0jk} \le m$$
+
+4. **Capacity Limit:** Total demand delivered on any route $k$ cannot exceed drone capacity $Q = 15$:
+   $$\sum_{i \in V_c} d_i \left( \sum_{j \in V, j \neq i} x_{ijk} \right) \le Q \quad \forall k \in K$$
+
+5. **Battery Autonomy Limit:** Total distance traveled by drone $k$ cannot exceed maximum autonomy $L = 15,000\text{ meters}$:
+   $$\sum_{i \in V} \sum_{j \in V, j \neq i} c_{ij} x_{ijk} \le L \quad \forall k \in K$$
+
+6. **Subtour Elimination (MTZ Constraints):** Prevents isolated loops disconnected from the Central Kitchen:
+   $$u_{ik} - u_{jk} + Q x_{ijk} \le Q - d_j \quad \forall i, j \in V_c, i \neq j, \forall k \in K$$
+   $$d_i \le u_{ik} \le Q \quad \forall i \in V_c, \forall k \in K$$
+
+---
+
+### Model B Formulation (Non-linear Power Consumption)
+
+#### Decision Variables
+* $v_k > 0$: Cruise speed of drone $k$ (in $\text{m/s}$).
+* $P_k$: Non-linear power consumption rate of drone $k$ (in Watts).
+* $T_k$: Total flight time for route $k$ (in seconds).
+
+#### Objective Function
+Minimize total non-linear energy consumption across all operational routes $k \in K$:
+$$\min \sum_{k \in K} D_k \left( \alpha \cdot v_k^2 + \beta \cdot (m_0 + w_k) + \frac{\gamma}{v_k} \right)$$
+
+#### Constraints
+1. **Speed Bounds:**
+   $$v_{\min} \le v_k \le v_{\max} \quad \forall k \in K$$
+
+2. **Delivery Time Window (Breakfast Temperature Guarantee):**
+   $$\frac{D_k}{v_k} \le T_{\max} \quad \forall k \in K$$
+
+3. **Maximum Battery Energy Reserve Limit:**
+   $$E_k(v_k, w_k) \le E_{\max} \quad \forall k \in K$$
+
+---
+
+## 💻 Tech Stack & Tools
+
+* **Language:** Python 3.x
+* **Modeling Framework:** Pyomo (`pyo.ConcreteModel`) / SciPy Optimize
+* **Solvers:** CBC / GLPK (for CVRP) & IPOPT / SLSQP (for Non-linear Optimization)
+* **Visualization:** Matplotlib & NumPy
+* **Environment:** Jupyter Notebook
+
+---
+
+## 👩‍💻 Authors
+* **Carla Aranda** 
+* **Marina Juzgado** 
